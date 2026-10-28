@@ -3,6 +3,7 @@ pub mod commands;
 pub mod config;
 pub mod discovery;
 pub mod engine;
+pub mod peer;
 pub mod setup;
 pub mod switch;
 
@@ -18,6 +19,7 @@ pub fn run() {
     let engine = engine::Engine::new(Arc::new(switch::Executor), cfg);
 
     engine::start(engine.clone());
+    let _ = peer::advertise();
 
     tauri::Builder::default()
         .manage(engine)
@@ -26,6 +28,7 @@ pub fn run() {
             commands::switch_to_peer,
             commands::take_trackpad,
             commands::list_devices,
+            commands::discover_peer,
             commands::set_config
         ])
         .setup(move |app| {

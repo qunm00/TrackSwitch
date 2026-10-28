@@ -4,6 +4,20 @@ function setStatus(message) {
   document.getElementById("status").textContent = message;
 }
 
+async function loadPeer() {
+  try {
+    const name = await invoke("discover_peer");
+    if (name) {
+      const input = document.getElementById("peer");
+      if (!input.value) {
+        input.value = name;
+      }
+    }
+  } catch (e) {
+    // Best-effort discovery. The user can type the name.
+  }
+}
+
 async function loadDevices() {
   try {
     const devices = await invoke("list_devices");
@@ -39,3 +53,4 @@ async function save() {
 
 document.getElementById("save").addEventListener("click", save);
 loadDevices();
+loadPeer();

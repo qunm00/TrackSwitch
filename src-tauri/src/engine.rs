@@ -117,7 +117,7 @@ mod tests {
     use crate::blueutil::Device;
     use crate::config::Config;
     use crate::switch::{BtExecutor, Mode, SwitchError};
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
 
     struct FakeBt {
         connected: bool,

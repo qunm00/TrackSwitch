@@ -1,6 +1,7 @@
 use crate::blueutil;
 use crate::config;
 use crate::engine::{Engine, TrackpadStatus};
+use crate::peer;
 use crate::setup;
 use crate::switch::{self, Mode};
 use serde::Serialize;
@@ -98,6 +99,11 @@ pub fn list_devices() -> Result<Vec<BluetoothDevicePayload>, String> {
 }
 
 #[tauri::command]
+pub fn discover_peer() -> Result<Option<String>, String> {
+    Ok(peer::discover_peer(std::time::Duration::from_secs(3)))
+}
+
+#[tauri::command]
 pub fn set_config(
     engine: State<'_, Engine>,
     trackpad_address: String,
@@ -116,7 +122,7 @@ mod tests {
     use super::*;
     use crate::blueutil::Device;
     use crate::config::Config;
-    use crate::engine::{AppState, Engine, TrackpadStatus};
+    use crate::engine::{Engine, TrackpadStatus};
     use crate::switch::{BtExecutor, Mode, SwitchError};
     use std::sync::Arc;
 
