@@ -33,22 +33,32 @@ impl Default for AppState {
     }
 }
 
+#[derive(Clone)]
 pub struct Engine {
     pub bt: Arc<dyn BtExecutor>,
-    pub cfg: Config,
+    pub cfg: Arc<Mutex<Config>>,
     pub state: Arc<Mutex<AppState>>,
 }
 
+impl Engine {
+    pub fn new(bt: Arc<dyn BtExecutor>, cfg: Config) -> Self {
+        Engine {
+            bt,
+            cfg: Arc::new(Mutex::new(cfg)),
+            state: Arc::new(Mutex::new(AppState::default())),
+        }
+    }
+}
+
 pub fn start(engine: Engine) {
-    let e = Arc::new(engine);
     std::thread::spawn(move || loop {
-        tick(&e);
+        tick(&engine);
         std::thread::sleep(Duration::from_secs(3));
     });
 }
 
 pub fn tick(e: &Engine) {
-    let addr = e.cfg.trackpad_address.clone();
+    let addr = e.cfg.lock().unwrap().trackpad_address.clone();
     if addr.is_empty() {
         return;
     }
@@ -153,14 +163,9 @@ mod tests {
             peer_name: "Mac B".into(),
             autostart: false,
         };
-        Engine {
-            bt: Arc::new(bt),
-            cfg,
-            state: Arc::new(Mutex::new(AppState {
-                mode,
-                status: TrackpadStatus::NotFound,
-            })),
-        }
+        let e = Engine::new(Arc::new(bt), cfg);
+        e.state.lock().unwrap().mode = mode;
+        e
     }
 
     #[test]
