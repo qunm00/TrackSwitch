@@ -22,8 +22,24 @@ pub struct Device {
 
 pub type DeviceInfo = Device;
 
+const BLUEUTIL_PATHS: [&str; 3] = [
+    "/opt/homebrew/bin/blueutil",
+    "/usr/local/bin/blueutil",
+    "blueutil",
+];
+
+fn find_blueutil() -> &'static str {
+    for path in BLUEUTIL_PATHS {
+        if path == "blueutil" || std::path::Path::new(path).exists() {
+            return path;
+        }
+    }
+    "blueutil"
+}
+
 fn run(args: &[&str]) -> Result<String, BlueutilError> {
-    let output = Command::new("blueutil").args(args).output().map_err(|e| {
+    let bin = find_blueutil();
+    let output = Command::new(bin).args(args).output().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
             BlueutilError::NotFound
         } else {
@@ -144,5 +160,15 @@ mod tests {
         let raw = r#"[{"address":"11-22-33-44-55-66","name":null,"paired":true,"connected":false}]"#;
         let devices = parse_devices(raw).unwrap();
         assert_eq!(devices[0].name, "");
+    }
+
+    #[test]
+    fn find_blueutil_returns_a_known_candidate() {
+        let bin = find_blueutil();
+        assert!(
+            bin == "/opt/homebrew/bin/blueutil"
+                || bin == "/usr/local/bin/blueutil"
+                || bin == "blueutil"
+        );
     }
 }

@@ -45,16 +45,13 @@ pub fn discover_peer(timeout: Duration) -> Option<String> {
     while start.elapsed() < timeout {
         let remaining = timeout.saturating_sub(start.elapsed());
         let wait = remaining.min(Duration::from_millis(500));
-        match receiver.recv_timeout(wait) {
-            Ok(ServiceEvent::ServiceResolved(info)) => {
-                if let Some(name) = info.get_property_val_str("peer") {
-                    let name = name.to_string();
-                    if name != hostname() {
-                        return Some(normalize_peer_name(&name));
-                    }
+        if let Ok(ServiceEvent::ServiceResolved(info)) = receiver.recv_timeout(wait) {
+            if let Some(name) = info.get_property_val_str("peer") {
+                let name = name.to_string();
+                if name != hostname() {
+                    return Some(normalize_peer_name(&name));
                 }
             }
-            _ => {}
         }
     }
     None

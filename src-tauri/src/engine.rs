@@ -3,19 +3,14 @@ use crate::switch::{self, BtExecutor, Decision, Mode};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TrackpadStatus {
     Connected,
     Free,
+    #[default]
     NotFound,
     HandingOff,
     OtherMac,
-}
-
-impl Default for TrackpadStatus {
-    fn default() -> Self {
-        TrackpadStatus::NotFound
-    }
 }
 
 #[derive(Debug)]

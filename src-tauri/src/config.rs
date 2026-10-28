@@ -9,21 +9,11 @@ pub enum ConfigError {
     Json(#[from] serde_json::Error),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
     pub trackpad_address: String,
     pub peer_name: String,
     pub autostart: bool,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            trackpad_address: String::new(),
-            peer_name: String::new(),
-            autostart: false,
-        }
-    }
 }
 
 pub fn load(path: &Path) -> Result<Config, ConfigError> {
