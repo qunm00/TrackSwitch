@@ -1,5 +1,6 @@
 pub mod blueutil;
 pub mod config;
+pub mod switch;
 
 use tauri::{
     menu::{Menu, MenuItem},
