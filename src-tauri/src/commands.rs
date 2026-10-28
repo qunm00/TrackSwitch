@@ -1,6 +1,7 @@
 use crate::blueutil;
 use crate::config;
 use crate::engine::{Engine, TrackpadStatus};
+use crate::setup;
 use crate::switch::{self, Mode};
 use serde::Serialize;
 use tauri::State;
@@ -106,6 +107,7 @@ pub fn set_config(
     cfg.trackpad_address = trackpad_address;
     cfg.peer_name = peer_name;
     config::save(&config::default_path(), &cfg).map_err(|e| e.to_string())?;
+    let _ = setup::install_autostart();
     Ok(())
 }
 

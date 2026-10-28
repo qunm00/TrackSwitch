@@ -3,6 +3,7 @@ pub mod commands;
 pub mod config;
 pub mod discovery;
 pub mod engine;
+pub mod setup;
 pub mod switch;
 
 use std::sync::Arc;
@@ -13,6 +14,7 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let cfg = config::load(&config::default_path()).unwrap_or_default();
+    let needs_setup = cfg.trackpad_address.is_empty() || cfg.peer_name.is_empty();
     let engine = engine::Engine::new(Arc::new(switch::Executor), cfg);
 
     engine::start(engine.clone());
@@ -26,7 +28,7 @@ pub fn run() {
             commands::list_devices,
             commands::set_config
         ])
-        .setup(|app| {
+        .setup(move |app| {
             let peer = app
                 .state::<engine::Engine>()
                 .cfg
@@ -68,6 +70,9 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+            if needs_setup {
+                open_preferences(app.handle());
+            }
             Ok(())
         })
         .run(tauri::generate_context!())
