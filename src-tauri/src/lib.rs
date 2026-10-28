@@ -1,4 +1,5 @@
 pub mod blueutil;
+pub mod cli;
 pub mod commands;
 pub mod config;
 pub mod discovery;
