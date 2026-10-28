@@ -2,6 +2,7 @@ pub mod blueutil;
 pub mod config;
 pub mod switch;
 pub mod engine;
+pub mod discovery;
 
 use tauri::{
     menu::{Menu, MenuItem},
