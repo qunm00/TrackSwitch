@@ -1,0 +1,21 @@
+[
+  {
+    "address": "aa-bb-cc-dd-ee-ff",
+    "name": "Magic Trackpad",
+    "recentAccessDate": "2026-10-28T12:00:00+00:00",
+    "favourite": false,
+    "paired": true,
+    "connected": true,
+    "slave": true,
+    "RSSI": -45,
+    "rawRSSI": -45
+  },
+  {
+    "address": "11-22-33-44-55-66",
+    "name": null,
+    "recentAccessDate": null,
+    "favourite": false,
+    "paired": true,
+    "connected": false
+  }
+]

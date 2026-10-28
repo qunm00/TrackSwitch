@@ -1,3 +1,5 @@
+pub mod blueutil;
+
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
