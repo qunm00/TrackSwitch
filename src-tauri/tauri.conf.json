@@ -17,5 +17,13 @@
     "active": true,
     "targets": "all",
     "icon": ["icons/icon.png"]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdBOUQyOUU4QjNEMUNFOTcKUldTWHp0R3o2Q21kZXJMczdpVW5LUmxBd2J2SzZtV2Y1R0FzQ0Urd0hHZTBXWHltb1JaVll3RDEK",
+      "endpoints": [
+        "https://github.com/qunm00/TrackSwitch/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

@@ -7,6 +7,7 @@ pub mod engine;
 pub mod peer;
 pub mod setup;
 pub mod switch;
+pub mod update;
 
 use std::sync::Arc;
 use tauri::menu::{Menu, MenuItem};
@@ -23,6 +24,7 @@ pub fn run() {
     let _ = peer::advertise();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(engine)
         .invoke_handler(tauri::generate_handler![
             commands::status,
@@ -53,8 +55,10 @@ pub fn run() {
             let switch_i =
                 MenuItem::with_id(app, "switch", switch_label.as_str(), true, None::<&str>)?;
             let prefs_i = MenuItem::with_id(app, "prefs", "Preferences", true, None::<&str>)?;
+            let update_i =
+                MenuItem::with_id(app, "update", "Check for updates", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&take_i, &switch_i, &prefs_i, &quit_i])?;
+            let menu = Menu::with_items(app, &[&take_i, &switch_i, &prefs_i, &update_i, &quit_i])?;
 
             TrayIconBuilder::new()
                 .menu(&menu)
@@ -69,6 +73,7 @@ pub fn run() {
                             let _ = commands::switch_to_peer_impl(engine.inner());
                         }
                         "prefs" => open_preferences(app),
+                        "update" => check_for_updates(app),
                         "quit" => app.exit(0),
                         _ => {}
                     }
@@ -81,6 +86,17 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn check_for_updates(app: &tauri::AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        match update::check_and_install(&app).await {
+            Ok(true) => app.restart(),
+            Ok(false) => {}
+            Err(e) => eprintln!("update: {e}"),
+        }
+    });
 }
 
 fn open_preferences(app: &tauri::AppHandle) {
