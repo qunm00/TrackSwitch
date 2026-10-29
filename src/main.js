@@ -13,7 +13,7 @@ async function loadPeer() {
         input.value = name;
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // Best-effort discovery. The user can type the name.
   }
 }
@@ -30,13 +30,13 @@ async function loadDevices() {
       select.appendChild(option);
     }
     const trackpad = devices.find(
-      (d) => d.name && d.name.toLowerCase().includes("trackpad")
+      (d) => d.name?.toLowerCase().includes("trackpad")
     );
     if (trackpad) {
       select.value = trackpad.address;
     }
   } catch (e) {
-    setStatus("Failed to list devices: " + e);
+    setStatus(`Failed to list devices: ${e}`);
   }
 }
 
@@ -47,7 +47,7 @@ async function save() {
     await invoke("set_config", { trackpadAddress, peerName });
     setStatus("Saved.");
   } catch (e) {
-    setStatus("Save failed: " + e);
+    setStatus(`Save failed: ${e}`);
   }
 }
 
