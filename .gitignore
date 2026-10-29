@@ -1,4 +1,4 @@
 target/
 .superpowers/
 .pi/
-src-tauri/gen/schemas/macOS-schema.json
+src-tauri/gen/schemas/
