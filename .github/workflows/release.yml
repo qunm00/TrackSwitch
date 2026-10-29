@@ -1,0 +1,124 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and publish
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  macos:
+    # This runner is Apple Silicon. The build is arm64 only.
+    # For an Intel Mac, add macos-13 to a matrix, or add the x86_64-apple-darwin
+    # Rust target and build with --target universal-apple-darwin.
+    runs-on: macos-latest
+    environment: release
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache the Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri -> target"
+
+      - name: Install the Tauri CLI
+        uses: taiki-e/install-action@v2
+        with:
+          tool: tauri-cli
+
+      - name: Run the unit tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Make sure that the signing keys are present
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::Set the environment secret TAURI_SIGNING_PRIVATE_KEY on the release environment. Make a key pair with: cargo tauri signer generate -w ~/.tauri/trackswitch.key"
+            exit 1
+          fi
+          if grep -q "PENDING_GENERATE_WITH" src-tauri/tauri.conf.json; then
+            echo "::error::src-tauri/tauri.conf.json still has the placeholder pubkey. Paste the public key that cargo tauri signer generate printed."
+            exit 1
+          fi
+
+      - name: Build the app bundle
+        env:
+          # Ad-hoc signature. This is enough for macOS to run the app.
+          # It is not an Apple signature and not a notarization.
+          APPLE_SIGNING_IDENTITY: "-"
+          MACOSX_DEPLOYMENT_TARGET: "13.0"
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: cargo tauri build --bundles app --config src-tauri/tauri.release.conf.json
+
+      - name: Make sure that the bundle is complete
+        run: |
+          APP="src-tauri/target/release/bundle/macos/TrackSwitch.app"
+          test -d "$APP"
+          EXEC=$(plutil -extract CFBundleExecutable raw "$APP/Contents/Info.plist")
+          test -x "$APP/Contents/MacOS/$EXEC"
+          echo "Bundle executable: $EXEC"
+          lipo -info "$APP/Contents/MacOS/$EXEC" || true
+          codesign --verify --strict "$APP"
+
+      - name: Package and hash
+        run: |
+          APP="src-tauri/target/release/bundle/macos/TrackSwitch.app"
+          ditto -c -k --keepParent "$APP" TrackSwitch.app.zip
+          shasum -a 256 TrackSwitch.app.zip > TrackSwitch.app.zip.sha256
+          TARBALL="src-tauri/target/release/bundle/macos/TrackSwitch.app.tar.gz"
+          test -f "$TARBALL"
+          test -f "$TARBALL.sig"
+          cp "$TARBALL" TrackSwitch.app.tar.gz
+          cp "$TARBALL.sig" TrackSwitch.app.tar.gz.sig
+          cat TrackSwitch.app.zip.sha256
+          unzip -l TrackSwitch.app.zip | grep -q "TrackSwitch.app/Contents/Info.plist"
+
+      - name: Write the update manifest
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION=$(jq -r .version src-tauri/tauri.conf.json)
+          SIGNATURE=$(cat TrackSwitch.app.tar.gz.sig)
+          URL="https://github.com/qunm00/TrackSwitch/releases/download/$TAG/TrackSwitch.app.tar.gz"
+          jq -n \
+            --arg version "$VERSION" \
+            --arg notes "TrackSwitch $TAG" \
+            --arg pub_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg signature "$SIGNATURE" \
+            --arg url "$URL" \
+            '{version: $version, notes: $notes, pub_date: $pub_date,
+              platforms: {"darwin-aarch64": {signature: $signature, url: $url}}}' \
+            > latest.json
+          cat latest.json
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          FILES="TrackSwitch.app.zip TrackSwitch.app.zip.sha256 TrackSwitch.app.tar.gz TrackSwitch.app.tar.gz.sig latest.json"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" $FILES --clobber
+          else
+            gh release create "$TAG" $FILES \
+              --title "$TAG" --generate-notes --verify-tag
+          fi
