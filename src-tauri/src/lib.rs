@@ -61,6 +61,7 @@ pub fn run() {
             let menu = Menu::with_items(app, &[&take_i, &switch_i, &prefs_i, &update_i, &quit_i])?;
 
             TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| {

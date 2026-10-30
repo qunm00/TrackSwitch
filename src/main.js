@@ -5,6 +5,7 @@ function setStatus(message) {
 }
 
 async function loadPeer() {
+  console.log('Loading peer...');
   try {
     const name = await invoke("discover_peer");
     if (name) {
@@ -19,6 +20,7 @@ async function loadPeer() {
 }
 
 async function loadDevices() {
+  console.log('Loading devices...');
   try {
     const devices = await invoke("list_devices");
     const select = document.getElementById("device");
