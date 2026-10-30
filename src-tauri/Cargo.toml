@@ -1,6 +1,6 @@
 [package]
 name = "trackswitch"
-version = "0.1.0"
+version = "0.1.1"
 description = "Move an Apple Magic Trackpad between two Macs with Bluetooth re-pairing"
 edition = "2021"
 
